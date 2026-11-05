@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clinical Judgement Poll</title>
+<style>
+  :root {
+    --paper: #FBFAF7;
+    --ink: #1A1A1A;
+    --grey: #6E6D6D;
+    --line: #E4E1DA;
+    --red: #8B0C17;
+    --red-soft: #F6E9EA;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #17171A;
+      --ink: #EDEBE6;
+      --grey: #A5A3A0;
+      --line: #34343A;
+      --red: #E0525D;
+      --red-soft: #3A1F23;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  main { width: 100%; max-width: 440px; }
+  .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--red);
+    margin: 0 0 18px;
+  }
+  .case {
+    border-left: 3px solid var(--red);
+    padding: 4px 0 4px 14px;
+    color: var(--grey);
+    font-size: 15px;
+    line-height: 1.45;
+    margin: 0 0 28px;
+  }
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 1.2;
+    margin: 0 0 8px;
+  }
+  .hint { color: var(--grey); font-size: 15px; margin: 0 0 22px; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button {
+    font: inherit;
+    font-size: 18px;
+    color: var(--ink);
+    background: transparent;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    padding: 22px 8px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  button:hover:not(:disabled) { border-color: var(--red); }
+  button:disabled { cursor: default; opacity: .45; }
+  button.chosen { opacity: 1; border-color: var(--red); background: var(--red-soft); color: var(--red); font-weight: 700; }
+  .status { min-height: 48px; margin: 24px 0 0; font-size: 15px; line-height: 1.45; }
+  .status strong { color: var(--red); }
+  footer { margin-top: 48px; color: var(--grey); font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="label">THE ANATOMY OF CLINICAL JUDGEMENT</p>
+  <p class="case">Noura, 22. A week of fever and headache, then nine days of insomnia, suspiciousness and disorganised speech. Admitted with a first episode of psychosis.</p>
+  <h1>How likely is autoimmune encephalitis?</h1>
+  <p class="hint">Choose one word.</p>
+  <div class="options" id="options">
+    <button data-v="unlikely">unlikely</button>
+    <button data-v="possible">possible</button>
+    <button data-v="probable">probable</button>
+    <button data-v="near certain">near certain</button>
+  </div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <footer>Anonymous. No names or emails are collected.</footer>
+</main>
+<script>
+  // Google Form endpoint and field, from the form's pre-filled link.
+  var FORM_ACTION = "";
+  var ENTRY = "";
+
+  var KEY = "cj-poll-answer";
+  var buttons = Array.prototype.slice.call(document.querySelectorAll("#options button"));
+  var status = document.getElementById("status");
+
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function recall(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function lock(value) {
+    buttons.forEach(function (b) {
+      b.disabled = true;
+      if (b.getAttribute("data-v") === value) b.classList.add("chosen");
+    });
+    status.innerHTML = "Thank you. Your answer was <strong>" + value + "</strong>. Keep it in mind; we will come back to it.";
+  }
+
+  if (!FORM_ACTION || !ENTRY) {
+    buttons.forEach(function (b) { b.disabled = true; });
+    status.textContent = "The poll opens when the talk begins.";
+  } else if (recall(KEY)) {
+    lock(recall(KEY));
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      var value = b.getAttribute("data-v");
+      buttons.forEach(function (x) { x.disabled = true; });
+      status.textContent = "Sending...";
+      var body = new URLSearchParams();
+      body.append(ENTRY, value);
+      fetch(FORM_ACTION, { method: "POST", mode: "no-cors", body: body })
+        .then(function () { store(KEY, value); lock(value); })
+        .catch(function () {
+          buttons.forEach(function (x) { x.disabled = false; });
+          status.textContent = "That did not go through. Please check your connection and try again.";
+        });
+    });
+  });
+</script>
+</body>
+</html>
