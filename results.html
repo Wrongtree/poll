@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poll Results</title>
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --ink: #1A1A1A;
+    --grey: #6E6D6D;
+    --track: #F2F0EB;
+    --red: #8B0C17;
+    --bar: #B5434C;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4vh 6vw;
+  }
+  main { width: 100%; max-width: 1400px; }
+  .label { font-size: clamp(11px, 1.1vw, 16px); font-weight: 700; letter-spacing: .12em; color: var(--red); margin: 0 0 1.6vh; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(26px, 3.6vw, 56px); margin: 0 0 1vh; }
+  .sub { color: var(--grey); font-size: clamp(14px, 1.5vw, 22px); margin: 0 0 5vh; }
+  .row { display: grid; grid-template-columns: 16% 1fr 14%; align-items: center; gap: 2vw; margin: 0 0 3.2vh; }
+  .word { font-family: Georgia, serif; font-size: clamp(18px, 2.2vw, 34px); text-align: right; }
+  .track { background: var(--track); height: clamp(28px, 6vh, 64px); border-radius: 3px; overflow: hidden; }
+  .fill { background: var(--bar); height: 100%; width: 0; transition: width .6s ease; }
+  .row.top .fill { background: var(--red); }
+  .num { font-size: clamp(18px, 2.2vw, 34px); color: var(--ink); }
+  .num small { color: var(--grey); font-size: .6em; margin-left: .4em; }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4vh; color: var(--grey); font-size: clamp(12px, 1.2vw, 18px); }
+  .foot img { height: clamp(70px, 13vh, 140px); }
+  .msg { color: var(--red); }
+</style>
+</head>
+<body>
+<main>
+  <p class="label">THE ANATOMY OF CLINICAL JUDGEMENT · OUR ANSWERS</p>
+  <h1>How likely is autoimmune encephalitis?</h1>
+  <p class="sub" id="sub">Waiting for answers</p>
+  <div id="rows"></div>
+  <div class="foot">
+    <span id="msg">wrongtree.github.io/poll</span>
+    <img src="qr.png" alt="QR code to the poll">
+  </div>
+</main>
+<script>
+  // Google Sheet linked to the form, shared as "Anyone with the link: Viewer".
+  var SHEET_ID = "";
+  var OPTIONS = ["unlikely", "possible", "probable", "near certain"];
+
+  var rows = document.getElementById("rows");
+  OPTIONS.forEach(function (o, i) {
+    rows.insertAdjacentHTML("beforeend",
+      '<div class="row" id="r' + i + '"><div class="word">' + o + '</div>' +
+      '<div class="track"><div class="fill"></div></div>' +
+      '<div class="num">0<small>0%</small></div></div>');
+  });
+
+  function draw(counts) {
+    var total = counts.reduce(function (a, b) { return a + b; }, 0);
+    var max = Math.max.apply(null, counts);
+    document.getElementById("sub").textContent = total === 1 ? "1 answer" : total + " answers";
+    counts.forEach(function (c, i) {
+      var r = document.getElementById("r" + i);
+      var pct = total ? Math.round(100 * c / total) : 0;
+      r.querySelector(".fill").style.width = (max ? 100 * c / max : 0) + "%";
+      r.querySelector(".num").innerHTML = c + "<small>" + pct + "%</small>";
+      r.classList.toggle("top", c > 0 && c === max);
+    });
+  }
+
+  window.onData = function (res) {
+    var counts = OPTIONS.map(function () { return 0; });
+    try {
+      res.table.rows.forEach(function (row) {
+        var v = row.c && row.c[1] && row.c[1].v;
+        var i = OPTIONS.indexOf(String(v || "").trim().toLowerCase());
+        if (i >= 0) counts[i]++;
+      });
+      draw(counts);
+    } catch (e) {}
+  };
+
+  function poll() {
+    if (!SHEET_ID) { document.getElementById("msg").textContent = "Results not connected yet"; return; }
+    var old = document.getElementById("gviz");
+    if (old) old.remove();
+    var s = document.createElement("script");
+    s.id = "gviz";
+    s.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
+      "/gviz/tq?tqx=out:json;responseHandler:onData&headers=1&t=" + Date.now();
+    document.body.appendChild(s);
+  }
+  poll();
+  setInterval(poll, 3000);
+</script>
+</body>
+</html>
