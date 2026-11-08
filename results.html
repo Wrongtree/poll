@@ -25,18 +25,17 @@
     padding: 4vh 6vw;
   }
   main { width: 100%; max-width: 1400px; }
-  .label { font-size: clamp(11px, 1.1vw, 16px); font-weight: 700; letter-spacing: .12em; color: var(--red); margin: 0 0 1.6vh; }
-  h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(26px, 3.6vw, 56px); margin: 0 0 1vh; }
-  .sub { color: var(--grey); font-size: clamp(14px, 1.5vw, 22px); margin: 0 0 5vh; }
+  .label { font-size: 14px; font-size: clamp(11px, 1.1vw, 16px); font-weight: 700; letter-spacing: .12em; color: var(--red); margin: 0 0 1.6vh; }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: 44px; font-size: clamp(26px, 3.6vw, 56px); margin: 0 0 1vh; }
+  .sub { color: var(--grey); font-size: 18px; font-size: clamp(14px, 1.5vw, 22px); margin: 0 0 5vh; }
   .row { display: grid; grid-template-columns: 16% 1fr 14%; align-items: center; gap: 2vw; margin: 0 0 3.2vh; }
-  .word { font-family: Georgia, serif; font-size: clamp(18px, 2.2vw, 34px); text-align: right; }
-  .track { background: var(--track); height: clamp(28px, 6vh, 64px); border-radius: 3px; overflow: hidden; }
+  .word { font-family: Georgia, serif; font-size: 28px; font-size: clamp(18px, 2.2vw, 34px); text-align: right; }
+  .track { background: var(--track); height: 44px; height: clamp(28px, 6vh, 64px); border-radius: 3px; overflow: hidden; }
   .fill { background: var(--bar); height: 100%; width: 0; transition: width .6s ease; }
   .row.top .fill { background: var(--red); }
-  .num { font-size: clamp(18px, 2.2vw, 34px); color: var(--ink); }
+  .num { font-size: 28px; font-size: clamp(18px, 2.2vw, 34px); color: var(--ink); }
   .num small { color: var(--grey); font-size: .6em; margin-left: .4em; }
-  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 4vh; color: var(--grey); font-size: clamp(12px, 1.2vw, 18px); }
-  .foot img { height: clamp(70px, 13vh, 140px); }
+  .foot { margin-top: 4vh; color: var(--grey); font-size: 15px; font-size: clamp(12px, 1.2vw, 18px); }
   .msg { color: var(--red); }
 </style>
 </head>
@@ -46,10 +45,7 @@
   <h1>How likely is autoimmune encephalitis?</h1>
   <p class="sub" id="sub">Waiting for answers</p>
   <div id="rows"></div>
-  <div class="foot">
-    <span id="msg">wrongtree.github.io/poll</span>
-    <img src="qr.png" alt="QR code to the poll">
-  </div>
+  <div class="foot"><span id="msg">Updates live</span></div>
 </main>
 <script>
   // Google Sheet linked to the form, shared as "Anyone with the link: Viewer".
@@ -73,7 +69,7 @@
       var pct = total ? Math.round(100 * c / total) : 0;
       r.querySelector(".fill").style.width = (max ? 100 * c / max : 0) + "%";
       r.querySelector(".num").innerHTML = c + "<small>" + pct + "%</small>";
-      r.classList.toggle("top", c > 0 && c === max);
+      if (c > 0 && c === max) r.classList.add("top"); else r.classList.remove("top");
     });
   }
 
@@ -92,7 +88,7 @@
   function poll() {
     if (!SHEET_ID) { document.getElementById("msg").textContent = "Results not connected yet"; return; }
     var old = document.getElementById("gviz");
-    if (old) old.remove();
+    if (old) old.parentNode.removeChild(old);
     var s = document.createElement("script");
     s.id = "gviz";
     s.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
